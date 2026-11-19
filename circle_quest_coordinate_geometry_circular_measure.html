@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circle Quest - Coordinate Geometry & Circular Measure</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <!-- KaTeX for crisp mathematical typesetting -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" onload="renderMath()"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, #0f172a 60%, #020617);
+            min-height: 100vh;
+            color: #f8fafc;
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .game-btn {
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.4);
+        }
+        .game-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.4);
+        }
+        .game-btn:active:not(:disabled) {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+        }
+        .game-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        @keyframes fadeSlide {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-card {
+            animation: fadeSlide 0.3s ease-out forwards;
+        }
+        .katex {
+            font-size: 1.06em;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="p-3 sm:p-6 flex flex-col items-center">
+
+    <!-- Top HUD Header -->
+    <header class="w-full max-w-6xl bg-slate-900/90 backdrop-blur-md border border-indigo-500/30 rounded-2xl p-4 mb-5 shadow-2xl flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-700 flex items-center justify-center font-extrabold text-lg text-white shadow-lg border border-cyan-300/30">
+                $\odot$
+            </div>
+            <div>
+                <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                    Circle Quest
+                    <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">A-Level / C2 Mastery</span>
+                </h1>
+                <p class="text-xs text-slate-400">Coordinate Geometry of Circles & Circular Measure (Arcs & Sectors)</p>
+            </div>
+        </div>
+
+        <!-- Score, Streak & Formula Sheet Trigger -->
+        <div class="flex items-center gap-2.5 sm:gap-3">
+            <button onclick="toggleFormulaModal(true)" class="game-btn px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+                <span>📘</span> Circle Formula Sheet
+            </button>
+            <div class="bg-slate-800/90 border border-slate-700 rounded-xl px-3 py-1.5 text-center">
+                <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Streak</div>
+                <div id="hudStreak" class="text-sm sm:text-base font-extrabold text-orange-400 mono">🔥 0</div>
+            </div>
+            <div class="bg-slate-800/90 border border-slate-700 rounded-xl px-3 py-1.5 text-center">
+                <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">XP Score</div>
+                <div id="hudScore" class="text-sm sm:text-base font-extrabold text-emerald-400 mono">0 XP</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 2-Tier Selector -->
+    <nav class="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5" id="tierSelector">
+        <button onclick="selectTier(0)" id="tier-btn-0" class="game-btn p-3.5 rounded-xl border text-left transition">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-extrabold uppercase tracking-wider text-cyan-400">Tier 1 • Coordinate Geometry</span>
+                <span id="tier-badge-0" class="text-xs font-bold mono px-2 py-0.5 rounded bg-slate-800 text-cyan-300">0/10</span>
+            </div>
+            <div class="text-sm sm:text-base font-bold text-white mt-0.5">Circle Equations, Tangents, Chords & Intersections</div>
+        </button>
+
+        <button onclick="selectTier(1)" id="tier-btn-1" class="game-btn p-3.5 rounded-xl border text-left transition">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-extrabold uppercase tracking-wider text-amber-400">Tier 2 • IGCSE 0606 Circular Measure</span>
+                <span id="tier-badge-1" class="text-xs font-bold mono px-2 py-0.5 rounded bg-slate-800 text-amber-300">0/10</span>
+            </div>
+            <div class="text-sm sm:text-base font-bold text-white mt-0.5">Composite Sectors, Parallel Chords & Algebraic Proofs</div>
+        </button>
+
+        <button onclick="selectTier(2)" id="tier-btn-2" class="game-btn p-3.5 rounded-xl border text-left transition">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-extrabold uppercase tracking-wider text-fuchsia-400">Tier 3 • Mixed Mastery</span>
+                <span id="tier-badge-2" class="text-xs font-bold mono px-2 py-0.5 rounded bg-slate-800 text-fuchsia-300">0/10</span>
+            </div>
+            <div class="text-sm sm:text-base font-bold text-white mt-0.5">Combined Coordinate Geometry & Circular Measure</div>
+        </button>
+    </nav>
+
+    <!-- Main Arena Grid -->
+    <main class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-5" id="mainArenaGrid">
+
+        <!-- Left Side: Interactive Problem & Diagram Reference (6 cols) -->
+        <section id="problemCol" class="lg:col-span-6 bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 shadow-2xl flex flex-col justify-between animate-card">
+            <div>
+                <!-- Question Header & 10-Question Switcher -->
+                <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-slate-800">
+                    <span id="tierLabel" class="text-xs font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                        Tier 1 • Coordinate Geometry
+                    </span>
+                    <div id="questionTabs" class="flex flex-wrap items-center gap-1">
+                        <!-- Rendered dynamically for Q1..Q10 -->
+                    </div>
+                </div>
+
+                <!-- Problem Statement Box -->
+                <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-4 mb-4">
+                    <h2 id="questionTitle" class="text-base sm:text-lg font-bold text-white mb-2">Question Title</h2>
+                    <div id="questionPrompt" class="text-sm text-slate-200 leading-relaxed space-y-2">
+                        <!-- Rendered dynamically -->
+                    </div>
+                    <!-- Geometric Reference Diagram Card (Directly under question) -->
+                    <div id="visualDiagramWrapper" class="mt-3 w-full h-52 sm:h-56 bg-slate-950 rounded-xl border border-indigo-500/40 p-2 relative overflow-hidden">
+                        <canvas id="diagramCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Interactive Step Inputs / Multiple Choice -->
+                <div id="interactionArea" class="space-y-3">
+                    <!-- Rendered dynamically -->
+                </div>
+            </div>
+
+            <!-- Feedback Banner & Action Buttons -->
+            <div class="mt-5 pt-4 border-t border-slate-800">
+                <div id="feedbackBox" class="hidden mb-3 p-3.5 rounded-xl border text-xs sm:text-sm leading-relaxed"></div>
+
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <button onclick="revealHint()" class="game-btn px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 text-xs sm:text-sm font-bold">
+                        💡 Show Hint
+                    </button>
+                    <button onclick="checkAnswer()" id="submitBtn" class="game-btn px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-extrabold">
+                        Verify Answer ✓
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Side: Spacious Scratchpad & Worked Solution (6 cols) -->
+        <section id="rightCol" class="lg:col-span-6 flex flex-col gap-5">
+
+            <!-- Dynamic Visual Scratchpad Card -->
+            <div class="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-4 shadow-xl">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                    <span id="visualPanelTitle" class="text-xs font-bold uppercase tracking-wider text-cyan-400">Student Scratchpad & Annotation</span>
+                    <div id="scratchpadToolbar" class="flex items-center gap-1.5">
+                        <button onclick="setPenColor('#38bdf8')" title="Sky Pen" class="w-4 h-4 rounded-full bg-sky-400 border border-white/60"></button>
+                        <button onclick="setPenColor('#34d399')" title="Emerald Pen" class="w-4 h-4 rounded-full bg-emerald-400 border border-white/60"></button>
+                        <button onclick="setPenColor('#fbbf24')" title="Amber Pen" class="w-4 h-4 rounded-full bg-amber-400 border border-white/60"></button>
+                        <button onclick="setPenColor('#f8fafc')" title="White Pen" class="w-4 h-4 rounded-full bg-slate-100 border border-white/60"></button>
+                        <button onclick="togglePadExpand()" id="expandPadBtn" class="ml-1 text-[11px] font-semibold px-2.5 py-0.5 rounded bg-indigo-900/70 hover:bg-indigo-800 text-indigo-200 border border-indigo-500/40">⛶ Expand Pad</button>
+                        <button onclick="clearScratchpad()" class="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600">Clear</button>
+                    </div>
+                </div>
+                <!-- Compact Formula Setup Banner -->
+                <div id="setupBanner" class="mb-2.5 p-2.5 rounded-xl bg-indigo-950/60 border border-indigo-500/30 text-xs text-indigo-200 flex items-center justify-between gap-2">
+                    <span id="setupBannerText" class="font-medium"></span>
+                    <span class="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold shrink-0">Key Theorem</span>
+                </div>
+                <div id="canvasWrapper" class="w-full h-[30rem] sm:h-[34rem] bg-slate-950 rounded-xl border border-slate-800 p-2 relative overflow-hidden">
+                    <canvas id="mathCanvas" class="touch-none cursor-crosshair"></canvas>
+                </div>
+                <p id="visualNote" class="text-xs text-slate-400 mt-2.5 leading-relaxed">
+                    Use your mouse, stylus, or finger to complete the square, calculate perpendicular gradients, or evaluate sector areas.
+                </p>
+            </div>
+
+            <!-- Step-by-Step Worked Solution Card (Unlocks after solving) -->
+            <div class="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-4 shadow-xl flex-1">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Exam Mark Scheme Walkthrough</span>
+                    <span id="solutionLockBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">Solve to Unlock</span>
+                </div>
+                <div id="workedSolutionBox" class="text-xs text-slate-300 space-y-2 bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 leading-relaxed">
+                    <p class="text-slate-500 italic">Complete the question on the left to unlock the full step-by-step mark scheme breakdown.</p>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Circle Formula Cheat Sheet Modal -->
+    <div id="formulaModal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-cyan-500/40 rounded-2xl max-w-lg w-full p-5 shadow-2xl animate-card">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+                <h3 class="text-lg font-extrabold text-cyan-400">📘 Circle Geometry & Measure Reference</h3>
+                <button onclick="toggleFormulaModal(false)" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
+            </div>
+            <div class="space-y-2.5 text-xs sm:text-sm text-slate-200">
+                <div class="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700">
+                    <div class="font-bold text-cyan-400">1. Standard Circle Equation: $(x - a)^2 + (y - b)^2 = r^2$</div>
+                    <div class="text-slate-400 text-xs mt-0.5">Centre is $(a, b)$ and radius is $r$. Complete the square when given $x^2 + y^2 + 2gx + 2fy + c = 0$.</div>
+                </div>
+                <div class="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700">
+                    <div class="font-bold text-sky-400">2. Circle Theorems in Coordinate Geometry</div>
+                    <div class="text-slate-400 text-xs mt-0.5">• Tangent $\perp$ Radius ($m_1 \cdot m_2 = -1$)<br>• Angle in a semicircle $= 90^\circ$<br>• Perpendicular from centre to a chord bisects the chord.</div>
+                </div>
+                <div class="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700">
+                    <div class="font-bold text-amber-400">3. Arc Length & Sector Area ($\theta$ in radians)</div>
+                    <div class="text-slate-400 text-xs mt-0.5">Arc length: $s = r\theta$ &nbsp;|&nbsp; Sector Area: $A_{\text{sector}} = \dfrac{1}{2}r^2\theta$ &nbsp;|&nbsp; ($180^\circ = \pi\text{ rad}$)</div>
+                </div>
+                <div class="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700">
+                    <div class="font-bold text-emerald-400">4. Area of a Circular Segment ($\theta$ in radians)</div>
+                    <div class="text-slate-400 text-xs mt-0.5">$A_{\text{segment}} = A_{\text{sector}} - A_{\triangle} = \dfrac{1}{2}r^2(\theta - \sin\theta)$</div>
+                </div>
+            </div>
+            <button onclick="toggleFormulaModal(false)" class="game-btn mt-4 w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-sm">
+                Back to Challenge
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CURRICULUM QUESTION BANK (3 TIERS x 10 Qs)
+        // ==========================================
+        const tiers = [
+            {
+                name: "Tier 1 • Coordinate Geometry",
+                badgeClass: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
+                xp: 90,
+                questions: [
+                    {
+                        title: "Q1.1: Standard Equation Centre & Radius",
+                        prompt: `
+                            <p>A circle has equation <span class="font-bold text-cyan-300">$(x - 3)^2 + (y + 2)^2 = 100$</span>.</p>
+                            <p>Find the <strong>centre $(a, b)$</strong> and the <strong>radius $r$</strong> of the circle.</p>
+                        `,
+                        hint: "Compare with $(x - a)^2 + (y - b)^2 = r^2$: $(x - 3)^2$ gives $a = 3$, $(y + 2)^2 = (y - (-2))^2$ gives $b = -2$, and $r = \\sqrt{100} = 10$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "c11_x", label: "Centre $x$-coordinate $a$:", answer: 3 },
+                            { id: "c11_y", label: "Centre $y$-coordinate $b$:", answer: -2 },
+                            { id: "c11_r", label: "Radius $r$:", answer: 10 }
+                        ],
+                        setupBanner: `<span>$(x - a)^2 + (y - b)^2 = r^2$</span><span>Centre: $(a, b)$</span><span>Radius: $r = \\sqrt{r^2}$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> Rewrite $(y + 2)^2$ as $(y - (-2))^2$.</p>
+                            <p><strong>Step 2:</strong> Read off centre $\\mathbf{(3, -2)}$ and radius $r = \\sqrt{100} = \\mathbf{10}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q1.2: Completing the Square",
+                        prompt: `
+                            <p>A circle has expanded equation <span class="font-bold text-cyan-300">$x^2 + y^2 - 8x + 6y - 11 = 0$</span>.</p>
+                            <p>Complete the square to find the <strong>centre $(a, b)$</strong> and <strong>radius $r$</strong>.</p>
+                        `,
+                        hint: "$(x - 4)^2 - 16 + (y + 3)^2 - 9 - 11 = 0 \\implies (x - 4)^2 + (y + 3)^2 = 36$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "c12_x", label: "Centre $x$-coordinate $a$:", answer: 4 },
+                            { id: "c12_y", label: "Centre $y$-coordinate $b$:", answer: -3 },
+                            { id: "c12_r", label: "Radius $r$:", answer: 6 }
+                        ],
+                        setupBanner: `<span>$x^2 - 8x = (x - 4)^2 - 16$</span><span>$y^2 + 6y = (y + 3)^2 - 9$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> Group $x$ and $y$ terms: $(x^2 - 8x) + (y^2 + 6y) = 11$.</p>
+                            <p><strong>Step 2:</strong> Complete the square: $(x - 4)^2 - 16 + (y + 3)^2 - 9 = 11 \\implies (x - 4)^2 + (y + 3)^2 = 36$.</p>
+                            <p><strong>Final Answer:</strong> Centre $\\mathbf{(4, -3)}$ and radius $r = \\mathbf{6}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q1.3: Diameter Endpoints",
+                        prompt: `
+                            <p>Points $P(-2, 1)$ and $Q(6, 7)$ are opposite ends of a diameter of a circle.</p>
+                            <p>Find the <strong>centre $(a, b)$</strong> and the <strong>radius $r$</strong>.</p>
+                        `,
+                        hint: "Centre is the midpoint $\\left(\\frac{-2 + 6}{2}, \\frac{1 + 7}{2}\\right) = (2, 4)$, and $r = \\sqrt{(6 - 2)^2 + (7 - 4)^2} = 5$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "c13_x", label: "Centre $x$-coordinate $a$:", answer: 2 },
+                            { id: "c13_y", label: "Centre $y$-coordinate $b$:", answer: 4 },
+                            { id: "c13_r", label: "Radius $r$:", answer: 5 }
+                        ],
+                        setupBanner: `<span>$\\text{Centre} = \\left(\\dfrac{x_1 + x_2}{2},\\, \\dfrac{y_1 + y_2}{2}\\right)$</span><span>$r = \\sqrt{(x_2 - a)^2 + (y_2 - b)^2}$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> Midpoint of $P(-2, 1)$ and $Q(6, 7)$ is $\\left(\\frac{4}{2}, \\frac{8}{2}\\right) = \\mathbf{(2, 4)}$.</p>
+                            <p><strong>Step 2:</strong> $r = \\sqrt{(6 - 2)^2 + (7 - 4)^2} = \\sqrt{16 + 9} = \\mathbf{5}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q1.4: Circle Touching a Coordinate Axis",
+                        prompt: `
+                            <p>A circle of radius $7$ touches the $x$-axis at $(5, 0)$ and lies in the first quadrant.</p>
+                            <p>Find the <strong>centre $(a, b)$</strong> of the circle.</p>
+                        `,
+                        hint: "Touching the $x$-axis at $(5, 0)$ means the $x$-coordinate of the centre is $5$ and the $y$-coordinate equals the radius $7$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "c14_x", label: "Centre $x$-coordinate $a$:", answer: 5 },
+                            { id: "c14_y", label: "Centre $y$-coordinate $b$:", answer: 7 }
+                        ],
+                        setupBanner: `<span>$\\text{Tangent to } x\\text{-axis at } (a, 0) \\implies \\text{Centre} = (a, r)$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> Since the circle touches the $x$-axis at $(5, 0)$, $a = 5$.</p>
+                            <p><strong>Step 2:</strong> Because radius $r = 7$ and it lies above the $x$-axis, $b = 7$, giving centre $\\mathbf{(5, 7)}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q1.5: Tangent Perpendicular to Radius",
+                        prompt: `
+                            <p>A circle has centre $M(2, 1)$ and passes through point $P(6, 4)$.</p>
+                            <p>The tangent at $P$ has equation $4x + 3y = k$. Find the value of $k$.</p>
+                        `,
+                        hint: "Gradient of radius $MP$ is $\\frac{4 - 1}{6 - 2} = \\frac{3}{4}$, so the perpendicular tangent has gradient $-\\frac{4}{3}$, i.e., $4x + 3y = k$. Substitute $P(6, 4)$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "c15_k", label: "Value of constant $k$:", answer: 36 }
+                        ],
+                        setupBanner: `<span>$m_{\\text{radius}} = \\dfrac{3}{4} \\implies m_{\\text{tangent}} = -\\dfrac{4}{3}$</span><span>$4x + 3y = 4(6) + 3(4)$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> $m_{MP} = \\dfrac{4 - 1}{6 - 2} = \\dfrac{3}{4}$, so $m_{\\text{tangent}} = -\\dfrac{4}{3}$.</p>
+                            <p><strong>Step 2:</strong> $y - 4 = -\\frac{4}{3}(x - 6) \\implies 3y - 12 = -4x + 24 \\implies 4x + 3y = \\mathbf{36}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q1.6: Tangent Length from an External Point",
+                        prompt: `
+                            <p>Circle $C$ has centre $M(1, -2)$ and radius $r = 5$. A tangent from external point $P(11, 8)$ touches $C$ at $T$.</p>
+                            <p>Find the tangent length $PT$ (to <strong>$2$ d.p.</strong>).</p>
+                        `,
+                        hint: "In right-angled $\\triangle MTP$ ($\\angle MTP = 90^\\circ$), $MP^2 = (11 - 1)^2 + (8 - (-2))^2 = 200$, and $PT = \\sqrt{MP^2 - MT^2} = \\sqrt{200 - 25}$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "c16_pt", label: "Tangent length $PT$ (to 2 d.p.):", answer: 13.23 }
+                        ],
+                        setupBanner: `<span>$\\text{Right } \\triangle MTP:\\; PT^2 + MT^2 = MP^2$</span><span>$PT = \\sqrt{MP^2 - r^2}$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> $MP^2 = (11 - 1)^2 + (8 - (-2))^2 = 10^2 + 10^2 = 200$.</p>
+                            <p><strong>Step 2:</strong> $PT = \\sqrt{200 - 5^2} = \\sqrt{175} \\approx \\mathbf{13.23}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q1.7: Perpendicular from Centre to a Chord",
+                        prompt: `
+                            <p>Circle $(x - 3)^2 + (y - 1)^2 = 169$ has radius $13$. A horizontal chord lies at distance $d = 5$ from the centre.</p>
+                            <p>Find the <strong>half-chord length</strong> and the <strong>full chord length</strong>.</p>
+                        `,
+                        hint: "The perpendicular from the centre bisects the chord into two right triangles with hypotenuse $r = 13$ and side $d = 5$: half-chord $= \\sqrt{13^2 - 5^2} = 12$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "c17_half", label: "Half-chord length:", answer: 12 },
+                            { id: "c17_full", label: "Full chord length:", answer: 24 }
+                        ],
+                        setupBanner: `<span>$\\text{Half-Chord} = \\sqrt{r^2 - d^2}$</span><span>$\\text{Full Chord} = 2 \\times \\text{Half-Chord}$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> Half-chord $= \\sqrt{13^2 - 5^2} = \\sqrt{169 - 25} = \\sqrt{144} = \\mathbf{12}$.</p>
+                            <p><strong>Step 2:</strong> Full chord length $= 2 \\times 12 = \\mathbf{24}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q1.8: Angle in a Semicircle ($90^\\circ$)",
+                        prompt: `
+                            <p>Points $P(-4, 1)$, $Q(2, 9)$, and $R(a, 3)$ lie on a circle with $PR$ as a diameter, so $\\angle PQR = 90^\\circ$.</p>
+                            <p>Find the value of $a$.</p>
+                        `,
+                        hint: "Gradient of $PQ$ is $\\frac{9 - 1}{2 - (-4)} = \\frac{8}{6} = \\frac{4}{3}$. Since $QR \\perp PQ$, gradient of $QR$ is $-\\frac{3}{4}$: $\\frac{3 - 9}{a - 2} = -\\frac{3}{4}$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "c18_a", label: "Value of $a$:", answer: 10 }
+                        ],
+                        setupBanner: `<span>$m_{PQ} \\times m_{QR} = -1$</span><span>$\\dfrac{4}{3} \\times \\dfrac{3 - 9}{a - 2} = -1$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> $m_{PQ} = \\dfrac{9 - 1}{2 - (-4)} = \\dfrac{4}{3}$, so $m_{QR} = -\\dfrac{3}{4}$.</p>
+                            <p><strong>Step 2:</strong> $\\dfrac{3 - 9}{a - 2} = -\\dfrac{3}{4} \\implies \\dfrac{-6}{a - 2} = -\\dfrac{3}{4} \\implies a - 2 = 8 \\implies \\mathbf{a = 10}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q1.9: Perpendicular Bisector of a Chord",
+                        prompt: `
+                            <p>Chord $AB$ joins $A(1, -2)$ and $B(5, 4)$ (midpoint $M(3, 1)$, gradient $\\frac{6}{4} = \\frac{3}{2}$).</p>
+                            <p>The centre $P(6, y)$ lies on the perpendicular bisector of $AB$. Find $y$.</p>
+                        `,
+                        hint: "The perpendicular bisector passes through $M(3, 1)$ with gradient $-\\frac{2}{3}$: $y - 1 = -\\frac{2}{3}(x - 3)$. Substitute $x = 6$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "c19_y", label: "Value of $y$:", answer: -1 }
+                        ],
+                        setupBanner: `<span>$\\text{Bisector at } M(3, 1):\\; y - 1 = -\\dfrac{2}{3}(x - 3)$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> Gradient of $AB$ is $\\frac{3}{2}$, so perpendicular gradient is $-\\frac{2}{3}$.</p>
+                            <p><strong>Step 2:</strong> At $x = 6$: $y - 1 = -\\frac{2}{3}(6 - 3) = -2 \\implies \\mathbf{y = -1}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q1.10: Externally Touching Circles",
+                        prompt: `
+                            <p>Two identical circles touch externally at point $T(x, y)$. Their centres are $C_1(2, 1)$ and $C_2(10, 7)$.</p>
+                            <p>Find the coordinates $(x, y)$ of the contact point $T$.</p>
+                        `,
+                        hint: "For two equal circles touching externally, the contact point $T$ is the exact midpoint of the line joining their centres $C_1(2, 1)$ and $C_2(10, 7)$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "c110_x", label: "Contact point $x$-coordinate:", answer: 6 },
+                            { id: "c110_y", label: "Contact point $y$-coordinate:", answer: 4 }
+                        ],
+                        setupBanner: `<span>$\\text{Equal Touching Circles} \\implies T = \\text{Midpoint}(C_1, C_2)$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> $x = \\dfrac{2 + 10}{2} = \\mathbf{6}$.</p>
+                            <p><strong>Step 2:</strong> $y = \\dfrac{1 + 7}{2} = \\mathbf{4}$, so contact point is $\\mathbf{T(6, 4)}$.</p>
+                        `
+                    }
+                ]
+            },
+            {
+                name: "Tier 2 • IGCSE 0606 Circular Measure",
+                badgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+                xp: 110,
+                questions: [
+                    {
+                        title: "Q2.1: Minor Segment Perimeter Formula (0606/11/M/J/16 Q11)",
+                        prompt: `
+                            <p>A circle has centre $O$ and radius $r\\text{ cm}$. Points $A$ and $B$ lie on the circle such that $\\angle AOB = 2\\theta\\text{ radians}$, where $0 &lt; \\theta &lt; \\frac{\\pi}{2}$.</p>
+                            <p>Given that the perimeter of the minor segment is $18\\text{ cm}$, show that $r = \\dfrac{9}{\\theta + \\sin\\theta}$, and find $r$ when $\\theta = 0.8\\text{ rad}$ (to <strong>$2$ d.p.</strong>).</p>
+                        `,
+                        hint: "Minor arc $AB = 2r\\theta$ and chord $AB = 2r\\sin\\theta$. Set $2r\\theta + 2r\\sin\\theta = 18 \\implies r(\\theta + \\sin\\theta) = 9$, then substitute $\\theta = 0.8$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "m21_r", label: "Radius $r$ when $\\theta = 0.8\\text{ rad}$ (to 2 d.p.):", answer: 5.93 }
+                        ],
+                        setupBanner: `<span>$\\text{Arc} = 2r\\theta$</span><span>$\\text{Chord} = 2r\\sin\\theta$</span><span>$P = 2r(\\theta + \\sin\\theta) = 18$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> Minor arc $AB = r(2\\theta) = 2r\\theta$, and chord $AB = 2(r\\sin\\theta) = 2r\\sin\\theta$.</p>
+                            <p><strong>Step 2:</strong> Perimeter $= 2r\\theta + 2r\\sin\\theta = 18 \\implies r(\\theta + \\sin\\theta) = 9 \\implies r = \\dfrac{9}{\\theta + \\sin\\theta}$.</p>
+                            <p><strong>Final Answer:</strong> At $\\theta = 0.8$, $r = \\dfrac{9}{0.8 + \\sin 0.8} \\approx \\dfrac{9}{1.517356} \\approx \\mathbf{5.93\\text{ cm}}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q2.2: Simultaneous Arc & Sector Area (0606/11/O/N/18 Q5)",
+                        prompt: `
+                            <p>A sector of a circle has radius $r\\text{ cm}$, angle $\\theta\\text{ radians}$, arc length $12\\text{ cm}$, and area $96\\text{ cm}^2$.</p>
+                            <p>Find the radius $r$ (cm) and the <strong>area of the single minor segment</strong> formed by the chord of this sector (to <strong>$2$ d.p.</strong>).</p>
+                        `,
+                        hint: "From $r\\theta = 12$ and $\\frac{1}{2}r^2\\theta = 96$, divide to get $\\frac{1}{2}r(12) = 96 \\implies 6r = 96 \\implies r = 16\\text{ cm}$ and $\\theta = 0.75\\text{ rad}$. Minor segment $= \\frac{1}{2}(16^2)(0.75 - \\sin 0.75)$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "m22_r", label: "Radius $r$ (cm):", answer: 16 },
+                            { id: "m22_seg", label: "Area of minor segment (to 2 d.p.):", answer: 8.75 }
+                        ],
+                        setupBanner: `<span>$s = r\\theta = 12$</span><span>$\\frac{1}{2}r^2\\theta = 96$</span><span>$A_{\\text{seg}} = \\frac{1}{2}r^2(\\theta - \\sin\\theta)$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> Substitute $r\\theta = 12$ into $\\dfrac{1}{2}r^2\\theta = 96$: $\\dfrac{1}{2}r(12) = 96 \\implies 6r = 96 \\implies \\mathbf{r = 16\\text{ cm}}$.</p>
+                            <p><strong>Step 2:</strong> Then $\\theta = \\dfrac{12}{16} = 0.75\\text{ rad}$.</p>
+                            <p><strong>Step 3:</strong> Minor segment area $= \\dfrac{1}{2}(16^2)(0.75 - \\sin 0.75) = 128(0.75 - 0.681639) \\approx \\mathbf{8.75\\text{ cm}^2}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q2.3: Isosceles Triangle & Tangential Arc (0606/11/M/J/20 Q7)",
+                        prompt: `
+                            <p>In isosceles $\\triangle OAB$ ($OA = OB$), sector $OCD$ (centre $O$, radius $12\\text{ cm}$, angle $\\theta = 0.8\\text{ rad}$) touches base $AB$ tangentially at its midpoint $M$ ($OM = 12\\text{ cm}$).</p>
+                            <p>Find the length of base $AB$ (to <strong>$2$ d.p.</strong>) and the <strong>shaded area</strong> inside $\\triangle OAB$ outside sector $OCD$ (to <strong>$2$ d.p.</strong>).</p>
+                        `,
+                        hint: "In right $\\triangle OMA$, $\\angle AOM = 0.4\\text{ rad}$ and $OM = 12$, so $AM = 12\\tan(0.4)$ and $AB = 24\\tan(0.4)$. Area($\\triangle OAB$) $= \\frac{1}{2}(AB)(12) = 144\\tan(0.4)$, minus sector $OCD = \\frac{1}{2}(144)(0.8)$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "m23_ab", label: "Length of base $AB$ (to 2 d.p.):", answer: 10.15 },
+                            { id: "m23_sh", label: "Shaded area inside $\\triangle OAB$ outside sector $OCD$ (to 2 d.p.):", answer: 3.28 }
+                        ],
+                        setupBanner: `<span>$AB = 2r\\tan\\left(\\dfrac{\\theta}{2}\\right)$</span><span>$A_{\\text{shaded}} = A_{\\triangle OAB} - \\frac{1}{2}r^2\\theta$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> In right $\\triangle OMA$, $AM = 12\\tan(0.4) \\approx 5.0735\\text{ cm}$, so $AB = 2AM \\approx \\mathbf{10.15\\text{ cm}}$.</p>
+                            <p><strong>Step 2:</strong> Area($\\triangle OAB$) $= \\dfrac{1}{2}(10.1470)(12) \\approx 60.882\\text{ cm}^2$.</p>
+                            <p><strong>Step 3:</strong> Sector $OCD = \\dfrac{1}{2}(12^2)(0.8) = 57.60\\text{ cm}^2$, giving shaded area $= 60.882 - 57.60 = \\mathbf{3.28\\text{ cm}^2}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q2.4: Sector Attached to Rectangle (0606/11/O/N/16 Q8)",
+                        prompt: `
+                            <p>Minor sector $AOB$ (centre $O$, radius $12\\text{ cm}$, $\\angle AOB = 1.92\\text{ rad}$) sits directly above rectangle $ABCD$ of height $AD = 8\\text{ cm}$ along chord $AB$.</p>
+                            <p>Find the length of chord $AB = 2(12)\\sin(0.96)$ (to <strong>$2$ d.p.</strong>) and the <strong>total combined area</strong> of sector $AOB$ plus rectangle $ABCD$ (to <strong>$2$ d.p.</strong>).</p>
+                        `,
+                        hint: "Chord $AB = 24\\sin(0.96) \\approx 19.67\\text{ cm}$. Sector $AOB = \\frac{1}{2}(144)(1.92) = 138.24\\text{ cm}^2$, and Rectangle $ABCD = 19.666 \\times 8 \\approx 157.33\\text{ cm}^2$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "m24_ab", label: "Chord length $AB$ (to 2 d.p.):", answer: 19.67 },
+                            { id: "m24_tot", label: "Total area of sector + rectangle (to 2 d.p.):", answer: 295.57 }
+                        ],
+                        setupBanner: `<span>$AB = 2r\\sin\\left(\\dfrac{\\theta}{2}\\right)$</span><span>$A_{\\text{total}} = \\frac{1}{2}r^2\\theta + (AB \\times AD)$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> Chord $AB = 2(12)\\sin(0.96) = 24(0.81919) \\approx \\mathbf{19.67\\text{ cm}}$.</p>
+                            <p><strong>Step 2:</strong> Sector $AOB = \\dfrac{1}{2}(12^2)(1.92) = 138.24\\text{ cm}^2$.</p>
+                            <p><strong>Step 3:</strong> Rectangle $ABCD = 19.666 \\times 8 \\approx 157.33\\text{ cm}^2$, so total area $= 138.24 + 157.33 = \\mathbf{295.57\\text{ cm}^2}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q2.5: Intersecting Circles with Mutual Tangents — Perimeter (0606/11/O/N/17 Q9)",
+                        prompt: `
+                            <p>Circle $A$ (radius $10\\text{ cm}$) and circle $B$ (radius $24\\text{ cm}$) intersect at $P$ and $Q$. Radii $AP, AQ$ are tangents to circle $B$, and radii $BP, BQ$ are tangents to circle $A$.</p>
+                            <p>Find $\\angle PAQ$ in radians (to <strong>$3$ s.f.</strong>) and the <strong>total perimeter of the shaded lens</strong> between minor arcs $PQ$ of both circles (to <strong>$2$ d.p.</strong>).</p>
+                        `,
+                        hint: "In right $\\triangle APB$ ($\\angle APB = 90^\\circ$), $\\tan(\\angle PAB) = \\frac{24}{10} = 2.4 \\implies \\angle PAB = 1.176005\\text{ rad}$, so $\\angle PAQ \\approx 2.35\\text{ rad}$, and $\\angle PBQ = \\pi - 2.35201 \\approx 0.78958\\text{ rad}$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "m25_paq", label: "Angle $\\angle PAQ$ in radians (to 3 s.f.):", answer: 2.35 },
+                            { id: "m25_per", label: "Perimeter of shaded lens (to 2 d.p.):", answer: 42.47 }
+                        ],
+                        setupBanner: `<span>$\\tan(\\angle PAB) = \\dfrac{24}{10}$</span><span>$P_{\\text{lens}} = 10(\\angle PAQ) + 24(\\angle PBQ)$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> $\\angle PAB = \\tan^{-1}(2.4) = 1.176005\\text{ rad} \\implies \\angle PAQ = 2.35201 \\approx \\mathbf{2.35\\text{ rad}}$.</p>
+                            <p><strong>Step 2:</strong> In quad $APBQ$, $\\angle PBQ = \\pi - 2.35201 = 0.78958\\text{ rad}$.</p>
+                            <p><strong>Step 3:</strong> Arc $PQ$ (circle $A$) $= 10(2.35201) = 23.520\\text{ cm}$; Arc $PQ$ (circle $B$) $= 24(0.78958) = 18.950\\text{ cm}$.</p>
+                            <p><strong>Final Answer:</strong> $23.520 + 18.950 = \\mathbf{42.47\\text{ cm}}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q2.6: Intersecting Tangent Lens — Area (0606/11/O/N/17 Q9(iv))",
+                        prompt: `
+                            <p>For the same intersecting tangent circles in Q2.5 (circle $A$ radius $10\\text{ cm}$, $\\angle PAQ = 2.35201\\text{ rad}$; circle $B$ radius $24\\text{ cm}$, $\\angle PBQ = 0.78958\\text{ rad}$).</p>
+                            <p>The shaded lens area is $\\text{Area}(\\text{Sector } APQ) + \\text{Area}(\\text{Sector } BPQ) - \\text{Area}(\\text{Kite } APBQ)$. Find this area (to <strong>$2$ d.p.</strong>).</p>
+                        `,
+                        hint: "Sector $APQ = \\frac{1}{2}(100)(2.35201) = 117.6005$. Sector $BPQ = \\frac{1}{2}(576)(0.78958) = 227.399$. Kite $APBQ = 2 \\times \\frac{1}{2}(10)(24) = 240$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "m26_area", label: "Area of shaded lens (to 2 d.p.):", answer: 105.00 }
+                        ],
+                        setupBanner: `<span>$A_{\\text{lens}} = A_{\\text{sector } APQ} + A_{\\text{sector } BPQ} - 2\\,A_{\\triangle APB}$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> Sector $APQ = 0.5(10^2)(2.35201) = 117.6005\\text{ cm}^2$.</p>
+                            <p><strong>Step 2:</strong> Sector $BPQ = 0.5(24^2)(0.78958) = 227.399\\text{ cm}^2$.</p>
+                            <p><strong>Step 3:</strong> Kite $APBQ = 2 \\times [0.5 \\times 10 \\times 24] = 240.00\\text{ cm}^2$.</p>
+                            <p><strong>Final Answer:</strong> $117.6005 + 227.399 - 240 = \\mathbf{105.00\\text{ cm}^2}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q2.7: Parallel Chords on Opposite Sides of Centre (0606/11/O/N/19 Q9)",
+                        prompt: `
+                            <p>In a circle of radius $10\\text{ cm}$, parallel chords $AB = 15\\text{ cm}$ and $DC = 10\\text{ cm}$ lie on opposite sides of centre $O$.</p>
+                            <p>Find $\\angle AOB$ in radians (to <strong>$2$ d.p.</strong>) and the <strong>area of the shaded strip $ABCD$</strong> between the two parallel chords (to <strong>$2$ d.p.</strong>).</p>
+                        `,
+                        hint: "$\\angle AOB = 2\\sin^{-1}(0.75) \\approx 1.70\\text{ rad}$ (segment $AB \\approx 35.21\\text{ cm}^2$); $\\angle DOC = 2\\sin^{-1}(0.5) = \\frac{\\pi}{3}$ (segment $DC \\approx 9.06\\text{ cm}^2$). Strip $= 100\\pi - 35.21 - 9.06$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "m27_aob", label: "Angle $\\angle AOB$ in radians (to 2 d.p.):", answer: 1.70 },
+                            { id: "m27_strip", label: "Area of shaded strip $ABCD$ (to 2 d.p.):", answer: 269.89 }
+                        ],
+                        setupBanner: `<span>$\\sin\\left(\\dfrac{\\angle AOB}{2}\\right) = \\dfrac{7.5}{10}$</span><span>$A_{\\text{strip}} = \\pi r^2 - A_{\\text{seg } AB} - A_{\\text{seg } DC}$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> $\\angle AOB = 2\\sin^{-1}(0.75) = 1.6961 \\approx \\mathbf{1.70\\text{ rad}}$; $\\angle DOC = 2\\sin^{-1}(0.5) = \\dfrac{\\pi}{3} = 1.0472\\text{ rad}$.</p>
+                            <p><strong>Step 2:</strong> Segment $AB = 50(1.69612 - \\sin 1.69612) \\approx 35.21\\text{ cm}^2$; Segment $DC = 50\\left(\\dfrac{\\pi}{3} - \\dfrac{\\sqrt{3}}{2}\\right) \\approx 9.06\\text{ cm}^2$.</p>
+                            <p><strong>Final Answer:</strong> $100\\pi - 35.21 - 9.06 = 314.159 - 44.27 = \\mathbf{269.89\\text{ cm}^2}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q2.8: Right-Angled Triangle & Inner Arc (0606/12/M/J/19 Q5)",
+                        prompt: `
+                            <p>In right-angled $\\triangle OAB$ ($\\angle OAB = \\frac{\\pi}{2}$), $OA = 12\\text{ cm}$ and $\\angle AOB = \\theta\\text{ rad}$. Point $C$ lies on $OB$ so that arc $AC$ (centre $O$, radius $12\\text{ cm}$) has length $9.6\\text{ cm}$.</p>
+                            <p>Find $\\theta$ in radians and the <strong>shaded area</strong> between line $AB$, line $BC$, and arc $AC$ (to <strong>$2$ d.p.</strong>).</p>
+                        `,
+                        hint: "$\\theta = \\frac{9.6}{12} = 0.8\\text{ rad}$. Area($\\triangle OAB$) $= \\frac{1}{2}(12)(12\\tan 0.8) = 72\\tan(0.8)$, minus sector $OAC = \\frac{1}{2}(144)(0.8) = 57.6$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "m28_th", label: "Angle $\\theta$ (radians):", answer: 0.8 },
+                            { id: "m28_sh", label: "Shaded area (to 2 d.p.):", answer: 16.53 }
+                        ],
+                        setupBanner: `<span>$\\theta = \\dfrac{s}{r} = \\dfrac{9.6}{12}$</span><span>$A_{\\text{shaded}} = \\frac{1}{2}r^2\\tan\\theta - \\frac{1}{2}r^2\\theta$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> $\\theta = \\dfrac{9.6}{12} = \\mathbf{0.8\\text{ rad}}$.</p>
+                            <p><strong>Step 2:</strong> Area($\\triangle OAB$) $= \\dfrac{1}{2}(12)(12\\tan 0.8) = 72(1.02964) \\approx 74.134\\text{ cm}^2$.</p>
+                            <p><strong>Step 3:</strong> Sector $OAC = \\dfrac{1}{2}(12^2)(0.8) = 57.60\\text{ cm}^2$, giving shaded area $= 74.134 - 57.60 = \\mathbf{16.53\\text{ cm}^2}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q2.9: Fixed Perimeter Algebraic Proof (0606/12/O/N/18 Q11)",
+                        prompt: `
+                            <p>Sector $OPQ$ (centre $O$, radius $r\\text{ cm}$, angle $\\theta\\text{ rad}$) has fixed perimeter $2r + r\\theta = 10\\text{ cm}$.</p>
+                            <p>Substituting $r = \\frac{10}{2 + \\theta}$ into $A = \\frac{1}{2}r^2\\theta$ yields $A = \\frac{50\\theta}{(2 + \\theta)^2}$. Evaluate $A$ at $\\theta = 2\\text{ rad}$ (to <strong>$2$ d.p.</strong>).</p>
+                        `,
+                        hint: "Substitute $\\theta = 2$ into $A = \\frac{50\\theta}{(2 + \\theta)^2} = \\frac{50(2)}{(2 + 2)^2} = \\frac{100}{16}$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "m29_maxa", label: "Sector area $A$ at $\\theta = 2\\text{ rad}$ (to 2 d.p.):", answer: 6.25 }
+                        ],
+                        setupBanner: `<span>$r = \\dfrac{10}{2 + \\theta}$</span><span>$A = \\frac{1}{2}r^2\\theta = \\dfrac{50\\theta}{(2 + \\theta)^2}$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> From $r(2 + \\theta) = 10$, we obtain $r = \\dfrac{10}{2 + \\theta}$.</p>
+                            <p><strong>Step 2:</strong> Substitute into $A = \\dfrac{1}{2}r^2\\theta$: $A = \\dfrac{1}{2}\\left(\\dfrac{10}{2 + \\theta}\\right)^2\\theta = \\dfrac{50\\theta}{(2 + \\theta)^2}$.</p>
+                            <p><strong>Final Answer:</strong> At $\\theta = 2$, $A = \\dfrac{100}{16} = \\mathbf{6.25\\text{ cm}^2}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q2.10: Concentric Sectors Ring Problem (0606/13/O/N/19 Q9)",
+                        prompt: `
+                            <p>Outer sector $OPQ$ has radius $3r\\text{ cm}$ and angle $\\theta\\text{ rad}$; inner sector $ORS$ has radius $2r\\text{ cm}$ and the same angle $\\theta\\text{ rad}$. The perimeter of shaded ring $PQRS$ is $2r + 5r\\theta = 100\\text{ cm}$.</p>
+                            <p>When $r = 10\\text{ cm}$, find $\\theta$ in radians and the <strong>shaded ring area $A = 50r - r^2$</strong>.</p>
+                        `,
+                        hint: "With $r = 10$: $2(10) + 5(10)\\theta = 100 \\implies 20 + 50\\theta = 100 \\implies \\theta = 1.6\\text{ rad}$. Shaded area $= 50(10) - 10^2$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "m210_th", label: "Angle $\\theta$ in radians (when $r = 10$):", answer: 1.6 },
+                            { id: "m210_a", label: "Shaded ring area $A$ (when $r = 10$):", answer: 400 }
+                        ],
+                        setupBanner: `<span>$P_{PQRS} = 2r + 5r\\theta = 100$</span><span>$A_{PQRS} = \\frac{1}{2}(9r^2 - 4r^2)\\theta = 50r - r^2$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> Shaded perimeter $= (3r - 2r) + (3r - 2r) + 3r\\theta + 2r\\theta = 2r + 5r\\theta = 100$.</p>
+                            <p><strong>Step 2:</strong> At $r = 10$: $20 + 50\\theta = 100 \\implies 50\\theta = 80 \\implies \\mathbf{\\theta = 1.6\\text{ rad}}$.</p>
+                            <p><strong>Step 3:</strong> Shaded area $= \\dfrac{1}{2}(9r^2 - 4r^2)\\theta = 2.5r^2\\theta$. Since $\\theta = \\dfrac{100 - 2r}{5r}$, $A = 50r - r^2 = 500 - 100 = \\mathbf{400\\text{ cm}^2}$.</p>
+                        `
+                    }
+                ]
+            },
+            {
+                name: "Tier 3 • Mixed Mastery",
+                badgeClass: "bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30",
+                xp: 140,
+                questions: [
+                    {
+                        title: "Q3.1: Normal Line Through Circle Centre & Arc Length",
+                        prompt: `
+                            <p>A circle has equation <span class="font-bold text-fuchsia-300">$(x + 2)^2 + (y - 3)^2 = 50$</span> (centre $C(-2, 3)$, radius $r = \\sqrt{50}$). Point $Q(3, 8)$ lies on the circle.</p>
+                            <p>Find the gradient of radius $CQ$ and the <strong>arc length</strong> of a sector of radius $\\sqrt{50}$ with central angle $1.2\\text{ rad}$ (to <strong>$2$ d.p.</strong>).</p>
+                        `,
+                        hint: "Gradient of $CQ$ is $\\frac{8 - 3}{3 - (-2)} = \\frac{5}{5} = 1$. Arc length is $s = r\\theta = \\sqrt{50} \\times 1.2 \\approx 8.49$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "u31_m", label: "Gradient of radius $CQ$:", answer: 1 },
+                            { id: "u31_arc", label: "Arc length $s$ for $r = \\sqrt{50}, \\theta = 1.2$ (to 2 d.p.):", answer: 8.49 }
+                        ],
+                        setupBanner: `<span>$m_{CQ} = \\dfrac{8 - 3}{3 - (-2)}$</span><span>$\\text{Arc } s = \\sqrt{50} \\times 1.2$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> Gradient of $CQ = \\dfrac{8 - 3}{3 - (-2)} = \\dfrac{5}{5} = \\mathbf{1}$.</p>
+                            <p><strong>Step 2:</strong> Arc length $s = \\sqrt{50} \\times 1.2 = 7.07107 \\times 1.2 \\approx \\mathbf{8.49}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q3.2: Circle Touching Both Axes & Circular Segment",
+                        prompt: `
+                            <p>A circle of radius $r = 8$ lies in the first quadrant and touches both the $x$-axis and the $y$-axis (centre $(8, 8)$).</p>
+                            <p>Find the <strong>area of a circular segment</strong> of radius $8$ and central angle $\\theta = 1.4\\text{ rad}$ (to <strong>$2$ d.p.</strong>) and the <strong>centre $x$-coordinate</strong>.</p>
+                        `,
+                        hint: "Touching both coordinate axes in quadrant 1 with radius $8$ gives centre $(8, 8)$. Segment area $= \\frac{1}{2}(8^2)(1.4 - \\sin 1.4) = 32(1.4 - 0.98545)$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "u32_cx", label: "Centre $x$-coordinate:", answer: 8 },
+                            { id: "u32_seg", label: "Segment area ($r = 8, \\theta = 1.4$, to 2 d.p.):", answer: 13.27 }
+                        ],
+                        setupBanner: `<span>$\\text{Touching Axes in Q1} \\implies \\text{Centre } (r, r)$</span><span>$A_{\\text{seg}} = \\frac{1}{2}r^2(\\theta - \\sin\\theta)$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> Touching both axes in the first quadrant with radius $8$ gives centre $(8, 8)$, so $\\mathbf{x = 8}$.</p>
+                            <p><strong>Step 2:</strong> Segment area $= \\dfrac{1}{2}(64)(1.4 - \\sin 1.4) = 32(0.41455) \\approx \\mathbf{13.27}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q3.3: Chord Distance from Centre & Sector Angle",
+                        prompt: `
+                            <p>In a circle of radius $15$, a chord of length $18$ has half-chord $9$, so its perpendicular distance from the centre is $d = \\sqrt{15^2 - 9^2}$.</p>
+                            <p>Find the distance $d$ and the <strong>central angle $\\theta$ in radians</strong> (to <strong>$2$ d.p.</strong>) for a sector of arc length $18$ and radius $15$.</p>
+                        `,
+                        hint: "$d = \\sqrt{225 - 81} = \\sqrt{144} = 12$. For arc $s = r\\theta$ with $s = 18$ and $r = 15$, $\\theta = \\frac{18}{15} = 1.2$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "u33_d", label: "Distance $d$ from centre to chord:", answer: 12 },
+                            { id: "u33_th", label: "Angle $\\theta$ (radians) for $s = 18, r = 15$:", answer: 1.2 }
+                        ],
+                        setupBanner: `<span>$d = \\sqrt{15^2 - 9^2}$</span><span>$\\theta = \\dfrac{s}{r} = \\dfrac{18}{15}$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> $d = \\sqrt{15^2 - 9^2} = \\sqrt{144} = \\mathbf{12}$.</p>
+                            <p><strong>Step 2:</strong> $\\theta = \\dfrac{18}{15} = \\mathbf{1.2\\text{ rad}}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q3.4: Completing Square with Fractions & Sector Area",
+                        prompt: `
+                            <p>A circle has equation <span class="font-bold text-fuchsia-300">$x^2 + y^2 - 6x + 2y - 15 = 0$</span>.</p>
+                            <p>Complete the square to find the <strong>radius $r$</strong>, and calculate the <strong>area of a sector</strong> of radius $r$ and angle $\\theta = 0.9\\text{ rad}$ (to <strong>$2$ d.p.</strong>).</p>
+                        `,
+                        hint: "$(x - 3)^2 - 9 + (y + 1)^2 - 1 - 15 = 0 \\implies (x - 3)^2 + (y + 1)^2 = 25$, so $r = 5$. Sector area $= \\frac{1}{2}(25)(0.9) = 11.25$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "u34_r", label: "Radius $r$:", answer: 5 },
+                            { id: "u34_sec", label: "Sector area ($\\theta = 0.9\\text{ rad}$, to 2 d.p.):", answer: 11.25 }
+                        ],
+                        setupBanner: `<span>$(x - 3)^2 + (y + 1)^2 = 25 \\implies r = 5$</span><span>$A_{\\text{sector}} = \\frac{1}{2}r^2\\theta$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> Completing the square gives $(x - 3)^2 + (y + 1)^2 = 25$, so $\\mathbf{r = 5}$.</p>
+                            <p><strong>Step 2:</strong> Sector area $= \\dfrac{1}{2}(5^2)(0.9) = 12.5 \\times 0.9 = \\mathbf{11.25}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q3.5: Normal Line Intercept & Minor Arc Length",
+                        prompt: `
+                            <p>A circle has centre $O(0, 0)$ and radius $10$. The tangent at $P(6, 8)$ has gradient $-\\frac{3}{4}$, so the normal along $OP$ passes through $(0, 0)$ and $(6, 8)$.</p>
+                            <p>Find the squared distance $OP^2$ and the <strong>minor arc length</strong> for $r = 10$ and $\\theta = 1.45\\text{ rad}$.</p>
+                        `,
+                        hint: "$OP^2 = 6^2 + 8^2 = 36 + 64 = 100$. Minor arc length $= 10 \\times 1.45 = 14.5$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "u35_op2", label: "Squared distance $OP^2$:", answer: 100 },
+                            { id: "u35_arc", label: "Minor arc length ($r = 10, \\theta = 1.45$):", answer: 14.5 }
+                        ],
+                        setupBanner: `<span>$OP^2 = 6^2 + 8^2$</span><span>$\\text{Minor Arc } s = r\\theta$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> $OP^2 = 6^2 + 8^2 = \\mathbf{100}$.</p>
+                            <p><strong>Step 2:</strong> Minor arc length $= 10 \\times 1.45 = \\mathbf{14.5}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q3.6: Chord Midpoint & Sector Perimeter",
+                        prompt: `
+                            <p>Points $A(-2, 5)$ and $B(4, 1)$ form a chord of a circle with midpoint $M(1, 3)$.</p>
+                            <p>Find the <strong>midpoint $y$-coordinate</strong> and the <strong>perimeter of a sector</strong> with $r = 6$ and $\\theta = 1.5\\text{ rad}$.</p>
+                        `,
+                        hint: "Midpoint $y$-coordinate is $\\frac{5 + 1}{2} = 3$. Sector perimeter $= 2r + r\\theta = 2(6) + 6(1.5) = 12 + 9 = 21$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "u36_my", label: "Midpoint $y$-coordinate:", answer: 3 },
+                            { id: "u36_per", label: "Sector perimeter ($r = 6, \\theta = 1.5$):", answer: 21 }
+                        ],
+                        setupBanner: `<span>$y_M = \\dfrac{5 + 1}{2}$</span><span>$\\text{Perimeter} = 2r + r\\theta$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> Midpoint $y$-coordinate $= \\dfrac{5 + 1}{2} = \\mathbf{3}$.</p>
+                            <p><strong>Step 2:</strong> Sector perimeter $= 2(6) + 6(1.5) = 12 + 9 = \\mathbf{21}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q3.7: Semicircle Right Triangle & Triangle Inside Sector",
+                        prompt: `
+                            <p>In a circle of radius $10$, a sector has central angle $\\theta = 1.1\\text{ rad}$.</p>
+                            <p>Find the <strong>area of the isosceles triangle</strong> inside the sector ($\\frac{1}{2}r^2\\sin\\theta$, to <strong>$2$ d.p.</strong>) and the <strong>area of the sector</strong> ($\\frac{1}{2}r^2\\theta$).</p>
+                        `,
+                        hint: "Triangle area $= 50\\sin(1.1) \\approx 50(0.89121) = 44.56$. Sector area $= 50(1.1) = 55$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "u37_tri", label: "Triangle area $\\frac{1}{2}r^2\\sin(1.1)$ (to 2 d.p.):", answer: 44.56 },
+                            { id: "u37_sec", label: "Sector area $\\frac{1}{2}r^2(1.1)$:", answer: 55 }
+                        ],
+                        setupBanner: `<span>$A_{\\triangle} = \\frac{1}{2}r^2\\sin\\theta$</span><span>$A_{\\text{sector}} = \\frac{1}{2}r^2\\theta$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> Triangle area $= \\dfrac{1}{2}(10^2)\\sin(1.1) = 50(0.89121) \\approx \\mathbf{44.56}$.</p>
+                            <p><strong>Step 2:</strong> Sector area $= \\dfrac{1}{2}(10^2)(1.1) = \\mathbf{55}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q3.8: Distance Between Two Circle Centres & Arc Ratio",
+                        prompt: `
+                            <p>Circle $1$ has centre $(1, 2)$ and circle $2$ has centre $(6, 14)$, so the distance between their centres is $d = \\sqrt{(6 - 1)^2 + (14 - 2)^2}$.</p>
+                            <p>Find $d$ and the <strong>arc length</strong> when $r = 12$ and $\\theta = 0.75\\text{ rad}$.</p>
+                        `,
+                        hint: "$d = \\sqrt{5^2 + 12^2} = \\sqrt{25 + 144} = \\sqrt{169} = 13$. Arc length $= 12 \\times 0.75 = 9$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "u38_d", label: "Distance $d$ between centres:", answer: 13 },
+                            { id: "u38_arc", label: "Arc length ($r = 12, \\theta = 0.75$):", answer: 9 }
+                        ],
+                        setupBanner: `<span>$d = \\sqrt{5^2 + 12^2}$</span><span>$\\text{Arc } s = 12 \\times 0.75$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> $d = \\sqrt{(6 - 1)^2 + (14 - 2)^2} = \\sqrt{25 + 144} = \\mathbf{13}$.</p>
+                            <p><strong>Step 2:</strong> Arc length $= 12 \\times 0.75 = \\mathbf{9}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q3.9: Y-Intercept of a Circle & Radians Conversion",
+                        prompt: `
+                            <p>A circle of radius $5$ has centre $(3, 0)$, intersecting the $y$-axis where $0^2 + y^2 = 5^2 - 3^2 = 16$.</p>
+                            <p>Find the positive $y$-intercept and the <strong>radian measure</strong> of $135^\\circ$ ($\\frac{3\\pi}{4}$, to <strong>$2$ d.p.</strong>).</p>
+                        `,
+                        hint: "Positive $y$-intercept is $\\sqrt{16} = 4$. In radians, $135^\\circ = \\frac{135\\pi}{180} = \\frac{3\\pi}{4} \\approx 2.36$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "u39_yi", label: "Positive $y$-intercept:", answer: 4 },
+                            { id: "u39_rad", label: "$135^\\circ$ in radians (to 2 d.p.):", answer: 2.36 }
+                        ],
+                        setupBanner: `<span>$y^2 = r^2 - x^2$</span><span>$\\text{Radians} = \\text{Degrees} \\times \\dfrac{\\pi}{180}$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> At $x = 0$, $y^2 = 25 - 9 = 16 \\implies \\mathbf{y = 4}$.</p>
+                            <p><strong>Step 2:</strong> $135^\\circ = \\dfrac{3\\pi}{4} \\approx \\mathbf{2.36\\text{ rad}}$.</p>
+                        `
+                    },
+                    {
+                        title: "Q3.10: Tangent Perpendicular Gradient & Sector Area in Degrees",
+                        prompt: `
+                            <p>A radius has gradient $m = -\\frac{5}{2}$, so a perpendicular tangent line has gradient $m_{\\perp} = -\\frac{1}{m}$.</p>
+                            <p>Find $m_{\\perp}$ and the <strong>area of a sector</strong> of radius $8$ and angle $60^\\circ$ ($\\frac{1}{2}(64)\\left(\\frac{\\pi}{3}\\right)$, to <strong>$2$ d.p.</strong>).</p>
+                        `,
+                        hint: "$m_{\\perp} = -\\frac{1}{-5/2} = \\frac{2}{5} = 0.4$. Sector area $= \\frac{32\\pi}{3} \\approx 33.51$.",
+                        type: "inputs",
+                        fields: [
+                            { id: "u310_m", label: "Perpendicular gradient $m_{\\perp}$:", answer: 0.4 },
+                            { id: "u310_sec", label: "Sector area ($r = 8, 60^\\circ$, to 2 d.p.):", answer: 33.51 }
+                        ],
+                        setupBanner: `<span>$m_{\\text{tangent}} = -\\dfrac{1}{m_{\\text{radius}}}$</span><span>$A_{\\text{sector}}(60^\\circ) = \\frac{1}{2}r^2\\left(\\dfrac{\\pi}{3}\\right)$</span>`,
+                        walkthrough: `
+                            <p><strong>Step 1:</strong> $m_{\\perp} = \\dfrac{2}{5} = \\mathbf{0.4}$.</p>
+                            <p><strong>Step 2:</strong> Sector area $= \\dfrac{1}{2}(8^2)\\left(\\dfrac{\\pi}{3}\\right) = \\dfrac{32\\pi}{3} \\approx \\mathbf{33.51}$.</p>
+                        `
+                    }
+                ]
+            }
+        ];
+
+        // ==========================================
+        // GAME STATE (3 TIERS x 10 QUESTIONS)
+        // ==========================================
+        let curTier = 0;
+        let curQ = 0;
+        let score = 0;
+        let streak = 0;
+        let selectedMcq = null;
+        const solvedMap = [
+            Array(10).fill(false),
+            Array(10).fill(false),
+            Array(10).fill(false)
+        ];
+
+        // ==========================================
+        // UI RENDERING & NAVIGATION
+        // ==========================================
+        function selectTier(tierIdx) {
+            curTier = tierIdx;
+            curQ = 0;
+            renderAll();
+        }
+
+        function switchQuestion(qIdx) {
+            curQ = qIdx;
+            renderAll();
+        }
+
+        function renderAll() {
+            selectedMcq = null;
+            const tier = tiers[curTier];
+            const qObj = tier.questions[curQ];
+            const isSolved = solvedMap[curTier][curQ];
+
+            // Update Tier Nav Buttons (x/10)
+            for (let i = 0; i < tiers.length; i++) {
+                const btn = document.getElementById(`tier-btn-${i}`);
+                const solvedCount = solvedMap[i].filter(Boolean).length;
+                document.getElementById(`tier-badge-${i}`).textContent = `${solvedCount}/10`;
+                if (i === curTier) {
+                    btn.className = "game-btn p-3.5 rounded-xl border-2 border-cyan-400 bg-slate-800/95 text-left transition shadow-lg";
+                } else {
+                    btn.className = "game-btn p-3.5 rounded-xl border border-slate-700/80 bg-slate-900/70 hover:bg-slate-800/70 text-left transition";
+                }
+            }
+
+            // Render Question Tabs (Q1 .. Q10)
+            const tabsEl = document.getElementById('questionTabs');
+            tabsEl.innerHTML = tier.questions.map((_, idx) => {
+                const qSolved = solvedMap[curTier][idx];
+                const isActive = curQ === idx;
+                let cls = "px-2 py-1 rounded-lg text-[11px] font-bold transition ";
+                if (isActive) {
+                    cls += "bg-cyan-600 text-white shadow";
+                } else if (qSolved) {
+                    cls += "bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-900/70";
+                } else {
+                    cls += "bg-slate-800 text-slate-300 hover:bg-slate-700";
+                }
+                return `<button onclick="switchQuestion(${idx})" class="${cls}">Q${idx + 1}${qSolved ? '✓' : ''}</button>`;
+            }).join('');
+
+            // Populate Question Card
+            const tierLabel = document.getElementById('tierLabel');
+            tierLabel.textContent = `${tier.name} (+${tier.xp} XP)`;
+            tierLabel.className = `text-xs font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg border ${tier.badgeClass}`;
+
+            document.getElementById('questionTitle').textContent = qObj.title;
+            document.getElementById('questionPrompt').innerHTML = qObj.prompt;
+
+            // Hide feedback banner on switch
+            const fb = document.getElementById('feedbackBox');
+            fb.classList.add('hidden');
+
+            // Render MCQ or Blank Numeric Input Fields
+            const area = document.getElementById('interactionArea');
+            if (qObj.type === "mcq") {
+                area.innerHTML = qObj.options.map((opt, idx) => `
+                    <button onclick="pickMcq(${idx})" id="mcq-opt-${idx}"
+                        class="w-full text-left p-3 rounded-xl border border-slate-700 bg-slate-800/70 hover:bg-slate-800 text-xs sm:text-sm text-slate-200 transition flex items-center gap-3">
+                        <span class="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center font-bold text-xs text-cyan-300 shrink-0">${String.fromCharCode(65 + idx)}</span>
+                        <span>${opt}</span>
+                    </button>
+                `).join('');
+            } else {
+                area.innerHTML = qObj.fields.map(f => `
+                    <div class="bg-slate-800/60 border border-slate-700/80 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <label for="inp_${f.id}" class="text-xs sm:text-sm font-medium text-slate-200">${f.label}</label>
+                        <input type="number" step="any" id="inp_${f.id}"
+                            class="w-full sm:w-36 bg-slate-950 border border-slate-600 focus:border-cyan-400 focus:outline-none rounded-lg px-3 py-1.5 text-sm font-bold text-white mono">
+                    </div>
+                `).join('');
+            }
+
+            // Update Worked Solution Box
+            const solBox = document.getElementById('workedSolutionBox');
+            const lockBadge = document.getElementById('solutionLockBadge');
+            if (isSolved) {
+                lockBadge.textContent = "Unlocked ✓";
+                lockBadge.className = "text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+                solBox.innerHTML = qObj.walkthrough;
+            } else {
+                lockBadge.textContent = "Solve to Unlock";
+                lockBadge.className = "text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700";
+                solBox.innerHTML = `<p class="text-slate-500 italic">Complete the question on the left to unlock the full step-by-step mark scheme breakdown.</p>`;
+            }
+
+            // Setup Guide Banner & Geometric Diagram under the Question
+            const bannerEl = document.getElementById('setupBannerText');
+            bannerEl.className = "flex flex-wrap items-center gap-2";
+            bannerEl.innerHTML = qObj.setupBanner;
+            bannerEl.querySelectorAll('span').forEach(sp => {
+                sp.className = "px-2.5 py-1 rounded-lg bg-slate-900/90 border border-indigo-400/30 text-indigo-100 text-xs sm:text-sm";
+            });
+            drawCircleDiagram();
+
+            const wrapper = document.getElementById('canvasWrapper');
+            wrapper.className = isPadExpanded
+                ? "w-full h-[40rem] bg-slate-950 rounded-xl border border-slate-800 p-2 relative overflow-hidden"
+                : "w-full h-[30rem] sm:h-[34rem] bg-slate-950 rounded-xl border border-slate-800 p-2 relative overflow-hidden";
+
+            initScratchpad();
+            renderMath();
+        }
+
+        function renderMath() {
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false }
+                    ],
+                    throwOnError: false
+                });
+            }
+        }
+
+        function pickMcq(idx) {
+            selectedMcq = idx;
+            const qObj = tiers[curTier].questions[curQ];
+            qObj.options.forEach((_, i) => {
+                const el = document.getElementById(`mcq-opt-${i}`);
+                if (i === idx) {
+                    el.className = "w-full text-left p-3 rounded-xl border-2 border-cyan-400 bg-cyan-950/60 text-xs sm:text-sm text-white transition flex items-center gap-3";
+                } else {
+                    el.className = "w-full text-left p-3 rounded-xl border border-slate-700 bg-slate-800/70 hover:bg-slate-800 text-xs sm:text-sm text-slate-200 transition flex items-center gap-3";
+                }
+            });
+        }
+
+        function revealHint() {
+            const qObj = tiers[curTier].questions[curQ];
+            showFeedback('hint', `💡 Hint: ${qObj.hint}`);
+        }
+
+        function checkAnswer() {
+            const tier = tiers[curTier];
+            const qObj = tier.questions[curQ];
+            let isCorrect = false;
+
+            if (qObj.type === "mcq") {
+                if (selectedMcq === null) {
+                    showFeedback('error', 'Please select one of the options (A, B, C, or D) first!');
+                    return;
+                }
+                isCorrect = (selectedMcq === qObj.correctIdx);
+            } else {
+                isCorrect = qObj.fields.every(f => {
+                    const val = parseFloat(document.getElementById(`inp_${f.id}`).value);
+                    return !isNaN(val) && Math.abs(val - f.answer) <= 0.05;
+                });
+            }
+
+            if (isCorrect) {
+                if (!solvedMap[curTier][curQ]) {
+                    solvedMap[curTier][curQ] = true;
+                    score += tier.xp;
+                    streak += 1;
+                }
+                updateHUD();
+                renderAll();
+                showFeedback('success', `🎉 Spot on! You earned +${tier.xp} XP. Check the unlocked Mark Scheme Walkthrough on the right!`);
+            } else {
+                streak = 0;
+                updateHUD();
+                showFeedback('error', '⚠️ Not quite right. Check your signs, radius squared, or radian mode, or click "Show Hint".');
+            }
+        }
+
+        function showFeedback(type, msg) {
+            const fb = document.getElementById('feedbackBox');
+            fb.classList.remove('hidden', 'bg-emerald-950/80', 'border-emerald-500', 'text-emerald-200',
+                'bg-rose-950/80', 'border-rose-500', 'text-rose-200',
+                'bg-amber-950/80', 'border-amber-500', 'text-amber-200');
+
+            if (type === 'success') {
+                fb.classList.add('bg-emerald-950/80', 'border-emerald-500', 'text-emerald-200');
+            } else if (type === 'error') {
+                fb.classList.add('bg-rose-950/80', 'border-rose-500', 'text-rose-200');
+            } else {
+                fb.classList.add('bg-amber-950/80', 'border-amber-500', 'text-amber-200');
+            }
+            fb.innerHTML = msg;
+            renderMath();
+        }
+
+        function updateHUD() {
+            document.getElementById('hudScore').textContent = `${score} XP`;
+            document.getElementById('hudStreak').textContent = `🔥 ${streak}`;
+        }
+
+        function toggleFormulaModal(show) {
+            const modal = document.getElementById('formulaModal');
+            if (show) modal.classList.remove('hidden');
+            else modal.classList.add('hidden');
+        }
+
+        // ==========================================
+        // INTERACTIVE SCRATCHPAD CANVAS
+        // ==========================================
+        let penColor = '#38bdf8';
+        let isDrawing = false;
+        let isPadExpanded = false;
+
+        function setPenColor(color) {
+            penColor = color;
+        }
+
+        function togglePadExpand(forceState) {
+            isPadExpanded = typeof forceState === 'boolean' ? forceState : !isPadExpanded;
+            const problemCol = document.getElementById('problemCol');
+            const rightCol = document.getElementById('rightCol');
+            const wrapper = document.getElementById('canvasWrapper');
+            const btn = document.getElementById('expandPadBtn');
+
+            if (isPadExpanded) {
+                problemCol.className = "lg:col-span-12 bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 shadow-2xl flex flex-col justify-between animate-card";
+                rightCol.className = "lg:col-span-12 flex flex-col gap-5";
+                wrapper.className = "w-full h-[40rem] bg-slate-950 rounded-xl border border-slate-800 p-2 relative overflow-hidden";
+                btn.textContent = "🗗 Split View";
+            } else {
+                problemCol.className = "lg:col-span-6 bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 shadow-2xl flex flex-col justify-between animate-card";
+                rightCol.className = "lg:col-span-6 flex flex-col gap-5";
+                wrapper.className = "w-full h-[30rem] sm:h-[34rem] bg-slate-950 rounded-xl border border-slate-800 p-2 relative overflow-hidden";
+                btn.textContent = "⛶ Expand Pad";
+            }
+            drawCircleDiagram();
+            initScratchpad();
+        }
+
+        // ==========================================
+        // GEOMETRIC REFERENCE DIAGRAMS (TIER 1 & 2)
+        // ==========================================
+        function drawCircleDiagram() {
+            const canvas = document.getElementById('diagramCanvas');
+            if (!canvas) return;
+            const rect = canvas.parentElement.getBoundingClientRect();
+            if (rect.width <= 0) return;
+            canvas.width = rect.width - 16;
+            canvas.height = rect.height - 16;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            // Subtle grid
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.08)';
+            ctx.lineWidth = 1;
+            for (let gx = 20; gx < w; gx += 20) {
+                ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, h); ctx.stroke();
+            }
+            for (let gy = 20; gy < h; gy += 20) {
+                ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(w, gy); ctx.stroke();
+            }
+
+            if (curTier === 0) {
+                drawTier1Diagram(ctx, w, h, curQ);
+            } else if (curTier === 1) {
+                drawTier2Diagram(ctx, w, h, curQ);
+            } else {
+                if (curQ % 2 === 0) drawTier1Diagram(ctx, w, h, curQ % 10);
+                else drawTier2Diagram(ctx, w, h, curQ % 10);
+            }
+        }
+
+        function drawDot(ctx, x, y, color = '#38bdf8', label = '', dx = 6, dy = -6) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fill();
+            if (label) {
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = 'bold 11px Inter, sans-serif';
+                ctx.fillText(label, x + dx, y + dy);
+            }
+        }
+
+        function drawTier1Diagram(ctx, w, h, qIdx) {
+            const cx = w * 0.48, cy = h * 0.52, r = Math.min(w, h) * 0.34;
+            ctx.save();
+
+            if (qIdx === 0 || qIdx === 1) {
+                // Centre & Radius diagram
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 2.2;
+                ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+
+                const px = cx + r * 0.78, py = cy - r * 0.62;
+                ctx.setLineDash([4, 3]);
+                ctx.strokeStyle = '#fbbf24';
+                ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(px, py); ctx.stroke();
+                ctx.setLineDash([]);
+
+                ctx.fillStyle = '#fde68a';
+                ctx.font = 'bold 11px Inter';
+                ctx.fillText(qIdx === 0 ? 'r = 10' : 'r = 6', (cx + px) / 2 - 14, (cy + py) / 2 - 8);
+
+                drawDot(ctx, cx, cy, '#38bdf8', qIdx === 0 ? 'A(3, -2)' : 'Centre (4, -3)', -28, 16);
+                if (qIdx === 0) drawDot(ctx, px, py, '#34d399', 'B(9, 6)', 6, -4);
+            } else if (qIdx === 2) {
+                // Diameter PQ
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 2.2;
+                ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+
+                const x1 = cx - r * 0.8, y1 = cy + r * 0.6;
+                const x2 = cx + r * 0.8, y2 = cy - r * 0.6;
+                ctx.strokeStyle = '#f43f5e';
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+
+                drawDot(ctx, x1, y1, '#fb7185', 'P(-2, 1)', -48, 12);
+                drawDot(ctx, x2, y2, '#fb7185', 'Q(6, 7)', 6, -4);
+                drawDot(ctx, cx, cy, '#38bdf8', 'Midpoint (2, 4)', 8, 12);
+            } else if (qIdx === 3) {
+                // Circle touching x-axis at (5, 0)
+                const baseLine = h - 26;
+                const cr = Math.min(h * 0.36, 62);
+                const ccy = baseLine - cr;
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.moveTo(30, baseLine); ctx.lineTo(w - 30, baseLine); ctx.stroke();
+                ctx.fillStyle = '#cbd5e1'; ctx.font = 'bold 11px Inter'; ctx.fillText('x-axis', w - 65, baseLine - 6);
+
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 2.2;
+                ctx.beginPath(); ctx.arc(cx, ccy, cr, 0, Math.PI * 2); ctx.stroke();
+
+                ctx.setLineDash([4, 3]);
+                ctx.strokeStyle = '#34d399';
+                ctx.beginPath(); ctx.moveTo(cx, ccy); ctx.lineTo(cx, baseLine); ctx.stroke();
+                ctx.setLineDash([]);
+
+                drawDot(ctx, cx, ccy, '#38bdf8', 'Centre (5, 7)', 8, 4);
+                drawDot(ctx, cx, baseLine, '#34d399', '(5, 0)', -14, 15);
+                ctx.fillStyle = '#6ee7b7'; ctx.fillText('r = 7', cx + 6, (ccy + baseLine) / 2);
+            } else if (qIdx === 4) {
+                // Tangent at P(6, 4)
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 2.2;
+                ctx.beginPath(); ctx.arc(cx - 20, cy + 8, r * 0.9, 0, Math.PI * 2); ctx.stroke();
+
+                const mx = cx - 20, my = cy + 8;
+                const px = mx + r * 0.9 * 0.8, py = my - r * 0.9 * 0.6;
+                ctx.strokeStyle = '#fbbf24';
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(px, py); ctx.stroke();
+
+                // Tangent line perpendicular to MP
+                ctx.strokeStyle = '#f43f5e';
+                ctx.beginPath();
+                ctx.moveTo(px - 36, py - 48);
+                ctx.lineTo(px + 42, py + 56);
+                ctx.stroke();
+
+                drawDot(ctx, mx, my, '#38bdf8', 'M(2, 1)', -45, 12);
+                drawDot(ctx, px, py, '#34d399', 'P(6, 4)', 8, -4);
+                ctx.fillStyle = '#fda4af'; ctx.font = 'bold 10px Inter'; ctx.fillText('Tangent (90°)', px + 14, py + 24);
+            } else if (qIdx === 5) {
+                // External point P(11, 8) and tangent PT
+                const mx = cx - 55, my = cy + 12, cr = 46;
+                const px = cx + 85, py = cy - 34;
+                const tx = mx + 12, ty = my - 44;
+
+                ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(mx, my, cr, 0, Math.PI * 2); ctx.stroke();
+
+                ctx.strokeStyle = '#fbbf24';
+                ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(tx, ty); ctx.stroke();
+                ctx.strokeStyle = '#94a3b8'; ctx.setLineDash([4, 3]);
+                ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(px, py); ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.strokeStyle = '#34d399'; ctx.lineWidth = 2.2;
+                ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(px, py); ctx.stroke();
+
+                drawDot(ctx, mx, my, '#38bdf8', 'M(1, -2)', -35, 16);
+                drawDot(ctx, tx, ty, '#fbbf24', 'T (90°)', -18, -8);
+                drawDot(ctx, px, py, '#34d399', 'P(11, 8)', 6, 4);
+            } else if (qIdx === 6) {
+                // Horizontal chord AB at y = 6
+                ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+
+                const dy = -r * 0.38;
+                const dx = Math.sqrt(r * r - dy * dy);
+                ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2.2;
+                ctx.beginPath(); ctx.moveTo(cx - dx, cy + dy); ctx.lineTo(cx + dx, cy + dy); ctx.stroke();
+
+                ctx.strokeStyle = '#f43f5e'; ctx.setLineDash([4, 3]);
+                ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy + dy);
+                ctx.moveTo(cx, cy); ctx.lineTo(cx + dx, cy + dy); ctx.stroke();
+                ctx.setLineDash([]);
+
+                drawDot(ctx, cx, cy, '#38bdf8', 'Centre (3, 1)', -30, 15);
+                drawDot(ctx, cx - dx, cy + dy, '#fbbf24', 'A', -14, -4);
+                drawDot(ctx, cx + dx, cy + dy, '#fbbf24', 'B', 6, -4);
+                ctx.fillStyle = '#fda4af'; ctx.font = 'bold 10px Inter'; ctx.fillText('d = 5', cx + 4, cy + dy / 2);
+            } else if (qIdx === 7) {
+                // Angle in a semicircle PQR = 90 deg
+                ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+
+                const px = cx - r, py = cy;
+                const rx = cx + r, ry = cy;
+                const qx = cx - r * 0.25, qy = cy - r * 0.968;
+
+                ctx.strokeStyle = '#94a3b8';
+                ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(rx, ry); ctx.stroke();
+                ctx.strokeStyle = '#34d399'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(qx, qy); ctx.lineTo(rx, ry); ctx.stroke();
+
+                drawDot(ctx, px, py, '#38bdf8', 'P(-4, 1)', -48, 14);
+                drawDot(ctx, qx, qy, '#34d399', 'Q(2, 9) [90°]', -10, -8);
+                drawDot(ctx, rx, ry, '#fbbf24', 'R(a, 3)', 6, 14);
+            } else if (qIdx === 8) {
+                // Chord AB and perpendicular bisector MP through centre P
+                ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(cx + 15, cy + 8, r * 0.92, 0, Math.PI * 2); ctx.stroke();
+
+                const ax = cx - 44, ay = cy + 32;
+                const bx = cx - 10, by = cy - 42;
+                const mx = (ax + bx) / 2, my = (ay + by) / 2;
+                const px = cx + 15, py = cy + 8;
+
+                ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2.2;
+                ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+                ctx.strokeStyle = '#f43f5e';
+                ctx.beginPath(); ctx.moveTo(mx - 20, my - 10); ctx.lineTo(px + 25, py + 12); ctx.stroke();
+
+                drawDot(ctx, ax, ay, '#fbbf24', 'A(1, -2)', -45, 12);
+                drawDot(ctx, bx, by, '#fbbf24', 'B(5, 4)', -10, -8);
+                drawDot(ctx, mx, my, '#34d399', 'M(3, 1)', -42, -4);
+                drawDot(ctx, px, py, '#38bdf8', 'P(6, y)', 6, 12);
+            } else {
+                // Two externally touching circles
+                const rPx = Math.min(w, h) * 0.25;
+                const c1x = cx - rPx * 0.8, c1y = cy + 12;
+                const c2x = cx + rPx * 0.8, c2y = cy - 12;
+                const tx = (c1x + c2x) / 2, ty = (c1y + c2y) / 2;
+
+                ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(c1x, c1y, rPx, 0, Math.PI * 2); ctx.stroke();
+                ctx.strokeStyle = '#34d399';
+                ctx.beginPath(); ctx.arc(c2x, c2y, rPx, 0, Math.PI * 2); ctx.stroke();
+
+                ctx.setLineDash([4, 3]); ctx.strokeStyle = '#94a3b8';
+                ctx.beginPath(); ctx.moveTo(c1x, c1y); ctx.lineTo(c2x, c2y); ctx.stroke();
+                ctx.setLineDash([]);
+
+                drawDot(ctx, c1x, c1y, '#38bdf8', 'C₁(2, 1)', -42, 14);
+                drawDot(ctx, c2x, c2y, '#34d399', 'C₂(10, 7)', 6, -6);
+                drawDot(ctx, tx, ty, '#facc15', 'T(x, y)', -16, -10);
+            }
+            ctx.restore();
+        }
+
+        function drawTier2Diagram(ctx, w, h, qIdx) {
+            const cx = w * 0.46, cy = h * 0.62, r = Math.min(w, h) * 0.44;
+            ctx.save();
+
+            if (qIdx <= 3) {
+                // Standard Sector OAB
+                const a1 = -Math.PI * 0.78, a2 = -Math.PI * 0.22;
+                ctx.fillStyle = 'rgba(251, 191, 36, 0.24)';
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.arc(cx, cy, r, a1, a2);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2.4;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.arc(cx, cy, r, a1, a2);
+                ctx.closePath();
+                ctx.stroke();
+
+                // Angle arc
+                ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.6;
+                ctx.beginPath(); ctx.arc(cx, cy, 24, a1, a2); ctx.stroke();
+
+                ctx.fillStyle = '#7dd3fc'; ctx.font = 'bold 11px Inter';
+                const thLabel = ['θ = 1.4 rad', 'θ = 0.75 rad', 'θ = ?', 'θ = 80°'][qIdx];
+                const rLabel = ['r = 12', 'r = 8', 'r = 10', 'r = 9'][qIdx];
+                ctx.fillText(thLabel, cx - 22, cy - 30);
+                ctx.fillStyle = '#fde68a';
+                ctx.fillText(rLabel, cx + r * 0.46, cy - r * 0.22);
+                ctx.fillText('Arc s', cx - 12, cy - r - 6);
+                drawDot(ctx, cx, cy, '#f8fafc', 'O', -14, 12);
+            } else if (qIdx === 4 || qIdx === 5) {
+                // Minor Segment between chord AB and arc AB
+                const ccy = h * 0.56, cr = Math.min(w, h) * 0.38;
+                const a1 = -Math.PI * 0.82, a2 = -Math.PI * 0.18;
+                const x1 = cx + cr * Math.cos(a1), y1 = ccy + cr * Math.sin(a1);
+                const x2 = cx + cr * Math.cos(a2), y2 = ccy + cr * Math.sin(a2);
+
+                // Shaded minor segment
+                ctx.fillStyle = 'rgba(244, 63, 94, 0.34)';
+                ctx.beginPath();
+                ctx.arc(cx, ccy, cr, a1, a2);
+                ctx.lineTo(x1, y1);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(cx, ccy); ctx.lineTo(x1, y1);
+                ctx.arc(cx, ccy, cr, a1, a2);
+                ctx.lineTo(cx, ccy);
+                ctx.stroke();
+
+                ctx.strokeStyle = '#fb7185'; ctx.lineWidth = 2.2;
+                ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+
+                drawDot(ctx, cx, ccy, '#f8fafc', qIdx === 4 ? 'O' : 'N', -14, 12);
+                drawDot(ctx, x1, y1, '#fbbf24', 'A', -14, 0);
+                drawDot(ctx, x2, y2, '#fbbf24', 'B', 6, 0);
+                ctx.fillStyle = '#fda4af'; ctx.font = 'bold 11px Inter';
+                ctx.fillText(qIdx === 4 ? 'Minor Segment' : 'Chord = 12', cx - 34, y1 - 12);
+            } else if (qIdx === 6) {
+                // Q2.7: Tangent TP, sector MTQ, shaded region TPQ
+                const mx = cx - 45, my = h * 0.56, cr = 46;
+                const px = cx + 92, py = h * 0.42;
+                const tx = mx + 22, ty = my - 40;
+
+                ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(mx, my, cr, 0, Math.PI * 2); ctx.stroke();
+
+                // Shaded region TPQ
+                ctx.fillStyle = 'rgba(251, 191, 36, 0.35)';
+                ctx.beginPath();
+                ctx.moveTo(tx, ty);
+                ctx.lineTo(px, py);
+                ctx.lineTo(mx + cr * 0.94, my - cr * 0.32);
+                ctx.arc(mx, my, cr, -0.33, -1.07, true);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(tx, ty); ctx.lineTo(px, py); ctx.lineTo(mx, my); ctx.stroke();
+
+                drawDot(ctx, mx, my, '#38bdf8', 'M', -14, 12);
+                drawDot(ctx, tx, ty, '#fbbf24', 'T', -6, -8);
+                drawDot(ctx, px, py, '#34d399', 'P', 6, 4);
+                ctx.fillStyle = '#fde68a'; ctx.font = 'bold 10px Inter'; ctx.fillText('Shaded TPQ', tx + 24, ty + 16);
+            } else if (qIdx === 7) {
+                // Q2.8: Annulus sector (R=10, r=6)
+                const R = Math.min(w, h) * 0.44, rIn = R * 0.6;
+                const a1 = -Math.PI * 0.78, a2 = -Math.PI * 0.22;
+
+                ctx.fillStyle = 'rgba(20, 184, 166, 0.32)';
+                ctx.beginPath();
+                ctx.arc(cx, cy, R, a1, a2);
+                ctx.arc(cx, cy, rIn, a2, a1, true);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.strokeStyle = '#2dd4bf'; ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, a1, a2); ctx.lineTo(cx, cy);
+                ctx.stroke();
+                ctx.beginPath(); ctx.arc(cx, cy, rIn, a1, a2); ctx.stroke();
+
+                ctx.fillStyle = '#5eead4'; ctx.font = 'bold 11px Inter';
+                ctx.fillText('R = 10', cx + R * 0.68, cy - R * 0.45);
+                ctx.fillText('r = 6', cx + rIn * 0.55, cy - rIn * 0.15);
+                drawDot(ctx, cx, cy, '#f8fafc', 'O', -14, 12);
+            } else if (qIdx === 8) {
+                // Q2.9: Major Sector
+                const ccy = h * 0.52, cr = Math.min(w, h) * 0.35;
+                const a1 = -0.55, a2 = 0.55;
+                ctx.fillStyle = 'rgba(168, 85, 247, 0.28)';
+                ctx.beginPath();
+                ctx.moveTo(cx, ccy);
+                ctx.arc(cx, ccy, cr, a2, a1 + Math.PI * 2);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.strokeStyle = '#c084fc'; ctx.lineWidth = 2.2;
+                ctx.beginPath();
+                ctx.moveTo(cx, ccy);
+                ctx.arc(cx, ccy, cr, a2, a1 + Math.PI * 2);
+                ctx.closePath();
+                ctx.stroke();
+
+                ctx.fillStyle = '#e9d5ff'; ctx.font = 'bold 11px Inter';
+                ctx.fillText('Major Sector (2π - 1.1)', cx - cr - 32, ccy - cr - 6);
+                ctx.fillStyle = '#94a3b8'; ctx.fillText('1.1 rad', cx + 16, ccy + 4);
+                drawDot(ctx, cx, ccy, '#f8fafc', 'O', -14, 4);
+            } else {
+                // Q2.10: Two overlapping circles passing through each other's centres
+                const ccy = h * 0.52, cr = Math.min(w, h) * 0.32;
+                const c1x = cx - cr * 0.5, c2x = cx + cr * 0.5;
+
+                // Shaded lens
+                ctx.fillStyle = 'rgba(251, 191, 36, 0.32)';
+                ctx.beginPath();
+                ctx.arc(c1x, ccy, cr, -Math.PI / 3, Math.PI / 3);
+                ctx.arc(c2x, ccy, cr, (2 * Math.PI) / 3, (4 * Math.PI) / 3);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(c1x, ccy, cr, 0, Math.PI * 2); ctx.stroke();
+                ctx.strokeStyle = '#34d399';
+                ctx.beginPath(); ctx.arc(c2x, ccy, cr, 0, Math.PI * 2); ctx.stroke();
+
+                drawDot(ctx, c1x, ccy, '#38bdf8', 'O₁', -18, 4);
+                drawDot(ctx, c2x, ccy, '#34d399', 'O₂', 8, 4);
+                ctx.fillStyle = '#fde68a'; ctx.font = 'bold 11px Inter'; ctx.fillText('Lens', cx - 13, ccy - 12);
+            }
+            ctx.restore();
+        }
+
+        function initScratchpad() {
+            const canvas = document.getElementById('mathCanvas');
+            if (!canvas) return;
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width - 16;
+            canvas.height = rect.height - 16;
+            const ctx = canvas.getContext('2d');
+            drawGridLines(ctx, canvas.width, canvas.height);
+        }
+
+        function clearScratchpad() {
+            initScratchpad();
+        }
+
+        function drawGridLines(ctx, w, h) {
+            ctx.clearRect(0, 0, w, h);
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.12)';
+            ctx.lineWidth = 1;
+            const step = 24;
+            for (let x = step; x < w; x += step) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+                ctx.stroke();
+            }
+            for (let y = step; y < h; y += step) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+            }
+        }
+
+        function getCanvasPos(canvas, e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function setupScratchpadEvents() {
+            const canvas = document.getElementById('mathCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            const startDraw = (e) => {
+                isDrawing = true;
+                const pos = getCanvasPos(canvas, e);
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+            };
+
+            const moveDraw = (e) => {
+                if (!isDrawing) return;
+                if (e.cancelable) e.preventDefault();
+                const pos = getCanvasPos(canvas, e);
+                ctx.strokeStyle = penColor;
+                ctx.lineWidth = 2.5;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+            };
+
+            const endDraw = () => {
+                isDrawing = false;
+            };
+
+            canvas.addEventListener('mousedown', startDraw);
+            canvas.addEventListener('mousemove', moveDraw);
+            window.addEventListener('mouseup', endDraw);
+
+            canvas.addEventListener('touchstart', startDraw, { passive: false });
+            canvas.addEventListener('touchmove', moveDraw, { passive: false });
+            window.addEventListener('touchend', endDraw);
+        }
+
+        window.addEventListener('resize', () => {
+            drawCircleDiagram();
+            initScratchpad();
+        });
+
+        window.onload = function () {
+            setupScratchpadEvents();
+            renderAll();
+        };
+    </script>
+</body>
+</html>
